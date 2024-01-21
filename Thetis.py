@@ -1,5 +1,6 @@
 import serial
 import threading
+from tkinter import Event
 
 # Query Thetis:
 # ZZIF;
@@ -58,55 +59,41 @@ import threading
 
 class Thetis:
     queryStr = b'ZZFA;ZZAC;'
-    step_value = (1,2,10,25,50,100,250,500,1_000,2_000,2_500,5_000,6_250,9_000,10_000,12_500,
-        15_000,20_000,25_000,30_000,50_000,100_000,250_000,500_000,1_000_000,10_000_000)
-
-    def __init__(self, port):
-        self._ser = serial.Serial(port, 115200, timeout=1)
-        self._frequency = 0
-        self._step = 0
+    
+    def __init__(self, port, root):
+        self.root = root
+        self.port = port
 
     def start(self):
-        self._running = True
-        self._thread = threading.Thread(target = self.run)
-        self._thread.daemon = True
-        self._thread.start()
+        self.ser = serial.Serial(self.port, 115200, timeout=1)
+        self.running = True
+        self.thread = threading.Thread(target=self.run)
+        # self.thread.daemon = True
+        self.thread.start()
 
     def stop(self):
-        self._running = False
-        self._thread.join()
-        self._ser.close()
+        self.running = False
+        self.thread.join()
+        self.ser.close()
 
     def query(self):
         try:
-            self._ser.write(Thetis.queryStr)
+            self.ser.write(Thetis.queryStr)
         except:
             pass
 
     def setVFOA(self, freq):
         try:
-            self._ser.write(('ZZFA%011d;' % freq).encode())
+            self.ser.write(f'ZZFA{freq:011};'.encode())
         except:
             pass
 
-    def onTurn(self, mult):
-        step_inc = Thetis.step_value[self._step]
-        self._frequency = (self._frequency // step_inc) * step_inc
-        freq = self._frequency + mult * step_inc
-        freq = min(max(freq, 100), 30_000_000)
-        self.setVFOA(freq)
-
     def run(self):
-        while self._running:
-            data = self._ser.read_until(b';')
+        while self.running:
+            data = self.ser.read_until(b';')
             if len(data) > 0:
-                self._handle_line(data.decode())
+                Event.VirtualEventData = data.decode('utf-8')
+                self.root.event_generate('<<THETIS>>', when='tail')
 
-    def _handle_line(self, data):
-        d = str(data)
-        if d[:4] == 'ZZFA':
-            self._frequency = int(d[4:15])
-        elif d[:4] == 'ZZAC':
-            self._step = int(d[4:6])
 
 
