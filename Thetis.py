@@ -1,6 +1,4 @@
-import serial
-import threading
-from tkinter import Event
+from Semicolon import Semicolon
 
 # Query Thetis:
 # ZZIF;
@@ -57,24 +55,12 @@ from tkinter import Event
 
 # ZZFA00000000000; Set VFO A frequency
 
-class Thetis:
+class Thetis(Semicolon):
     queryStr = b'ZZFA;ZZAC;'
-    
-    def __init__(self, port, root):
-        self.root = root
-        self.port = port
-
-    def start(self):
-        self.ser = serial.Serial(self.port, 115200, timeout=1)
-        self.running = True
-        self.thread = threading.Thread(target=self.run)
-        # self.thread.daemon = True
-        self.thread.start()
-
-    def stop(self):
-        self.running = False
-        self.thread.join()
-        self.ser.close()
+    def __init__(self, root, port):
+        super().__init__(root, port)
+        self.baud = 115200
+        self.event = '<<THETIS>>'    
 
     def query(self):
         try:
@@ -87,13 +73,3 @@ class Thetis:
             self.ser.write(f'ZZFA{freq:011};'.encode())
         except:
             pass
-
-    def run(self):
-        while self.running:
-            data = self.ser.read_until(b';')
-            if len(data) > 0:
-                Event.VirtualEventData = data.decode('utf-8')
-                self.root.event_generate('<<THETIS>>', when='tail')
-
-
-

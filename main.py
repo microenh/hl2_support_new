@@ -67,12 +67,11 @@ def run():
         thetis.setVFOA(freq)
 
 
-
     window = tk.Tk()
     window.bind('<<FC>>', on_fc)
     window.bind('<<THETIS>>', on_thetis)
-    thetis = Thetis('COM6', window)
-    flexControl = FlexControl('COM7', window)
+    thetis = Thetis(window, 'COM6')
+    flexControl = FlexControl(window, 'COM7')
     # window.title("FC")
     window.protocol('WM_DELETE_WINDOW', window.quit)
     # window.geometry('150x112')

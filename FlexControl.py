@@ -1,7 +1,4 @@
-import serial
-import threading
-from tkinter import Event
-
+from Semicolon import Semicolon
 
 # Sending from FlexControl to host:
 # All commands terminate with ';' (no returns or line feeds)
@@ -29,31 +26,13 @@ from tkinter import Event
 #    I111; set all LEDs on
 
 
-class FlexControl:
-    def __init__(self, port, root):
-        self.root = root
-        self.port = port
-
-    def start(self):
-        self.ser = serial.Serial(self.port, 9600, timeout=1)
-        self.running = True
-        self.thread = threading.Thread(target=self.run)
-        # self.thread.daemon = True
-        self.thread.start()
-
-    def stop(self):
-        self.running = False
-        self.thread.join()
-        self.ser.close()
+class FlexControl(Semicolon):
+    def __init__(self, root, port):
+        super().__init__(root, port)
+        self.baud = 9600
+        self.event = '<<FC>>'    
 
     def update_leds(self, left, middle, right):
         self.ser.write(f"I{left:d}{middle:d}{right:d};".encode())
-
-    def run(self):
-        while self.running:
-            data = self.ser.read_until(b';')
-            if len(data) > 0:
-                Event.VirtualEventData = data.decode('utf-8')
-                self.root.event_generate('<<FC>>', when='tail')
 
 

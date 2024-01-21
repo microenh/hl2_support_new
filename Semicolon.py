@@ -9,7 +9,7 @@ class Semicolon:
         self.port = port
 
     def start(self):
-        self.ser = serial.Serial(self.port, self.baud(), timeout=1)
+        self.ser = serial.Serial(self.port, self.baud, timeout=1)
         self.running = True
         self.thread = threading.Thread(target=self.run)
         # self.thread.daemon = True
@@ -25,4 +25,4 @@ class Semicolon:
             data = self.ser.read_until(b';')
             if len(data) > 0:
                 Event.VirtualEventData = data.decode('utf-8')
-                self.root.event_generate(self.event(), when='tail')
+                self.root.event_generate(self.event, when='tail')
