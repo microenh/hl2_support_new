@@ -4,6 +4,8 @@ from Thetis import Thetis
 import os
 from PIL import Image, ImageTk
 
+BG_COLOR = "#3d6466"
+
 def run():
     step_value = (1,2,10,25,50,100,250,500,1_000,2_000,2_500,5_000,6_250,9_000,10_000,12_500,
         15_000,20_000,25_000,30_000,50_000,100_000,250_000,500_000,1_000_000,10_000_000)
@@ -75,11 +77,11 @@ def run():
     # window.title("FC")
     window.protocol('WM_DELETE_WINDOW', window.quit)
     # window.geometry('150x112')
-    frame = tk.Frame(window)
+    frame = tk.Frame(window, bg=BG_COLOR)
     frame.pack(expand=True, fill='both')
     logo = os.path.join(os.path.dirname(__file__), "flex_control.png")
     image=ImageTk.PhotoImage(Image.open(logo))        
-    tk.Label(frame, image=image).pack()
+    tk.Label(frame, image=image, bg=BG_COLOR).pack()
 
     thetis.start()
     flexControl.start()
