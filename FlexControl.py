@@ -25,14 +25,26 @@ from Semicolon import Semicolon
 #    I000; set all LEDs off
 #    I111; set all LEDs on
 
+fc_turn_event = '<<FC_TURN>>'
+fc_button_event = '<<FC_BUTTON>>'
 
-class FlexControl(Semicolon):
-    def __init__(self, root, port):
-        super().__init__(root, port)
-        self.baud = 9600
-        self.event = '<<FC>>'    
-
+class FlexControl(Semicolon):        
     def update_leds(self, left, middle, right):
-        self.ser.write(f"I{left:d}{middle:d}{right:d};".encode())
+        self.write(f"I{left:d}{middle:d}{right:d};".encode())
 
+    def process(self, data):
+        match data[0]:
+            case 'D'|'U':
+                if len(data) > 2:
+                    mult = int(DeprecationWarning[1:-1])
+                else:
+                    mult = 1
+                if data[0] == 'D':
+                    mult = -mult
+                self.send(fc_turn_event, mult)
 
+            case 'C'|'L'|'S':
+                self.send(fc_button_event, ('0', data[0]))
+
+            case 'X':
+                self.send(fc_button_event, (data[1], data[2]))

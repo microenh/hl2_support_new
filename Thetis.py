@@ -54,22 +54,24 @@ from Semicolon import Semicolon
 # 1110  6,250 Hz
 
 # ZZFA00000000000; Set VFO A frequency
+thetis_freq_event = '<<THETIS_FREQ>>'
+thetis_step_event = '<<THETIS_STEP>>'
+
+queryStr = 'ZZFA;ZZAC;'.encode()
+
+step_value = (1,2,10,25,50,100,250,500,1_000,2_000,2_500,5_000,6_250,9_000,10_000,12_500,
+    15_000,20_000,25_000,30_000,50_000,100_000,250_000,500_000,1_000_000,10_000_000)
 
 class Thetis(Semicolon):
-    queryStr = b'ZZFA;ZZAC;'
-    def __init__(self, root, port):
-        super().__init__(root, port)
-        self.baud = 115200
-        self.event = '<<THETIS>>'    
-
     def query(self):
-        try:
-            self.ser.write(Thetis.queryStr)
-        except:
-            pass
+        self.write(queryStr)
 
     def setVFOA(self, freq):
-        try:
-            self.ser.write(f'ZZFA{freq:011};'.encode())
-        except:
-            pass
+        self.ser.write(f'ZZFA{freq:011};'.encode())
+
+    def process(self, data):
+        match (data[:4]):
+            case 'ZZFA':
+                self.send(thetis_freq_event, int(data[4:15]))
+            case 'ZZAC':
+                self.send(thetis_step_event, step_value[int(data[4:6])])

@@ -1,14 +1,12 @@
 import tkinter as tk
-from FlexControl import FlexControl
-from Thetis import Thetis
+from FlexControl import FlexControl, fc_turn_event, fc_button_event
+from Thetis import Thetis, thetis_freq_event, thetis_step_event
 import os
 from PIL import Image, ImageTk
 
 BG_COLOR = "#3d6466"
 
 def run():
-    step_value = (1,2,10,25,50,100,250,500,1_000,2_000,2_500,5_000,6_250,9_000,10_000,12_500,
-        15_000,20_000,25_000,30_000,50_000,100_000,250_000,500_000,1_000_000,10_000_000)
 
     leds = [False] * 3
     run.frequency = 0
@@ -21,61 +19,45 @@ def run():
     def updateLEDs():
         flexControl.update_leds(*leds)
 
-    def on_fc(e):
-        d = e.VirtualEventData
-        match d[0]:
-            case 'S':
-                window.quit()
-            # case 'L':
-            #     pass
-            # case 'C':
-            #     pass
-            case 'D'|'U':
-                if len(d) > 2:
-                    mult = int(d[1:-1])
-                else:
-                    mult = 1
-                if d[0] == 'D':
-                    mult = -mult
-                turn(mult)
 
-            case 'X':
-                ledNo = None
-                match d[2]:
-                    case 'S':
-                        ledNo = None
-                        match d[1]:
-                            case '1'|'2'|'3':
-                                ledNo = int(d[1]) - 1
-                                leds[ledNo] = not leds[ledNo]
-                                updateLEDs()
-                    # case 'L':
-                    #     pass
-                    # case 'C':
-                    #     pass
 
-    def on_thetis(e):
-        d = e.VirtualEventData
-        if d[:4] == 'ZZFA':
-            run.frequency = int(d[4:15])
-        elif d[:4] == 'ZZAC':
-            run.step = int(d[4:6])
+    def on_thetis_freq(e):
+        run.frequency = e.VirtualEventData
+
+    def on_thetis_step(e):
+        run.step = e.VirtualEventData
     
-    def turn(mult):
-        step_inc = step_value[run.step]
-        run.frequency = (run.frequency // step_inc) * step_inc
-        freq = run.frequency + mult * step_inc
+    def on_fc_turn(e):
+        mult = e.VirtualEventData
+        run.frequency = (run.frequency // run.step) * run.step
+        freq = run.frequency + mult * run.step
         freq = min(max(freq, 100), 30_000_000)
         thetis.setVFOA(freq)
 
-
+    def on_fc_button(e):
+        button, press = e.VirtualEventData
+        if press == 'S':
+            match (button):
+                case '0':
+                    window.quit()
+                case '1'|'2'|'3':
+                    which = int(button) - 1
+                    leds[which] = not leds[which]
+                    updateLEDs()
+        
     window = tk.Tk()
-    window.bind('<<FC>>', on_fc)
-    window.bind('<<THETIS>>', on_thetis)
-    thetis = Thetis(window, 'COM6')
-    flexControl = FlexControl(window, 'COM7')
-    # window.title("FC")
+
+    window.bind(fc_turn_event, on_fc_turn)
+    window.bind(fc_button_event, on_fc_button)
+
+    window.bind(thetis_freq_event, on_thetis_freq)
+    window.bind(thetis_step_event, on_thetis_step)
+
+    thetis = Thetis(window, 'COM6', 115200)
+    flexControl = FlexControl(window, 'COM7', 9600)
+
     window.protocol('WM_DELETE_WINDOW', window.quit)
+    # window.title("FC")
     # window.geometry('150x112')
     frame = tk.Frame(window, bg=BG_COLOR)
     frame.pack(expand=True, fill='both')
@@ -92,6 +74,7 @@ def run():
     updateLEDs()
     thetis.stop()
     flexControl.stop()
+    window.destroy()
 
 
 if __name__ == '__main__':
