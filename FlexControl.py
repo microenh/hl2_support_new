@@ -25,26 +25,44 @@ from Semicolon import Semicolon
 #    I000; set all LEDs off
 #    I111; set all LEDs on
 
-fc_turn_event = '<<FC_TURN>>'
-fc_button_event = '<<FC_BUTTON>>'
+FC_TURN = '<<FC_TURN>>'
+# fc_button = '<<FC_BUTTON>>'
 
-class FlexControl(Semicolon):        
-    def update_leds(self, left, middle, right):
-        self.write(f"I{left:d}{middle:d}{right:d};".encode())
+class FlexControl(Semicolon):
+
+    def clearLEDs(self):
+        self.leds = [False] * 3
+        self.update_leds()
+
+    def start(self):
+        self.clearLEDs()
+        super().start()
+
+    def stop(self):
+        self.clearLEDs()
+        super().stop()
+
+    def update_leds(self):
+        self.write(f'I{self.leds[0]:d}{self.leds[1]:d}{self.leds[2]:d};'.encode())
 
     def process(self, data):
         match data[0]:
             case 'D'|'U':
                 if len(data) > 2:
-                    mult = int(DeprecationWarning[1:-1])
+                    mult = int(data[1:-1])
                 else:
                     mult = 1
                 if data[0] == 'D':
                     mult = -mult
-                self.send(fc_turn_event, mult)
+                self.send(FC_TURN, mult)
 
-            case 'C'|'L'|'S':
-                self.send(fc_button_event, ('0', data[0]))
+            case 'S':
+                self.root.queue_quit()
+
+            # case 'C'|'L'|'S':
+            #     self.send(fc_button, ('0', data[0]))
 
             case 'X':
-                self.send(fc_button_event, (data[1], data[2]))
+                if data[2] == 'S':
+                    self.leds[i] = not self.leds[(i := int(data[1]) - 1)]
+                    self.update_leds()

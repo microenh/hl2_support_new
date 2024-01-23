@@ -1,4 +1,5 @@
 from Semicolon import Semicolon
+from datetime import datetime
 
 # Query Thetis:
 # ZZIF;
@@ -54,25 +55,44 @@ from Semicolon import Semicolon
 # 1110  6,250 Hz
 
 # ZZFA00000000000; Set VFO A frequency
-thetis_freq_event = '<<THETIS_FREQ>>'
-thetis_step_event = '<<THETIS_STEP>>'
 
-queryStr = 'ZZFA;ZZAC;'.encode()
+THETIS_DATA = '<<THETIS_DATA>>'
 
-step_value = (1,2,10,25,50,100,250,500,1_000,2_000,2_500,5_000,6_250,9_000,10_000,12_500,
+QUERY_STR = 'ZZFA;ZZAC;'.encode()
+STEP = (1,2,10,25,50,100,250,500,1_000,2_000,2_500,5_000,6_250,9_000,10_000,12_500,
     15_000,20_000,25_000,30_000,50_000,100_000,250_000,500_000,1_000_000,10_000_000)
 
 class Thetis(Semicolon):
-    def query(self):
-        self.write(queryStr)
+    # def __init__(self, root, port, baud):
+    #     self.timestamp = datetime.now().timestamp()
+    #     super().__init__(root, port, baud)
+        
+    # def heartbeat(self):
+    #     if (new_timestamp := datetime.now().timestamp()) - self.timestamp > 1:
+    #         self.root.queue_quit()
+    #     self.timestamp = new_timestamp
+    #     self.write(queryStr)
+ 
+    def turn(self, mult):
+        self.mult = mult
+        self.write(QUERY_STR)
+    
+    def turn2(self):
+        self.freq = (self.freq // self.step) * self.step
+        freq = self.freq + self.mult * self.step
+        freq = min(max(freq, 100), 30_000_000)
+        self.write(f'ZZFA{freq:011};'.encode())
 
-    def setVFOA(self, freq):
-        self.ser.write(f'ZZFA{freq:011};'.encode())
+    def update(self, field, value):
+        if value != self.__dict__.get(field, None):
+            self.__dict__[field] = value
+            self.send(THETIS_DATA, (field, value))
 
     def process(self, data):
         if len(data) > 5:
             match (data[:4]):
                 case 'ZZFA':
-                    self.send(thetis_freq_event, int(data[4:15]))
+                    self.update('freq', int(data[4:15]))
                 case 'ZZAC':
-                    self.send(thetis_step_event, step_value[int(data[4:6])])
+                    self.update('step', STEP[int(data[4:6])])
+                    self.turn2()
