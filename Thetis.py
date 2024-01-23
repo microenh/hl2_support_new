@@ -72,6 +72,10 @@ class Thetis(Semicolon):
     def process(self, data):
         match (data[:4]):
             case 'ZZFA':
-                self.send(thetis_freq_event, int(data[4:15]))
+                freq = int(data[4:15])
+                if freq:
+                    self.send(thetis_freq_event, freq)
             case 'ZZAC':
-                self.send(thetis_step_event, step_value[int(data[4:6])])
+                i = int(data[4:6])
+                if i:
+                    self.send(thetis_step_event, step_value[i])
