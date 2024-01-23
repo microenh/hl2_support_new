@@ -70,12 +70,9 @@ class Thetis(Semicolon):
         self.ser.write(f'ZZFA{freq:011};'.encode())
 
     def process(self, data):
-        match (data[:4]):
-            case 'ZZFA':
-                freq = int(data[4:15])
-                if freq:
-                    self.send(thetis_freq_event, freq)
-            case 'ZZAC':
-                i = int(data[4:6])
-                if i:
-                    self.send(thetis_step_event, step_value[i])
+        if len(data) > 5:
+            match (data[:4]):
+                case 'ZZFA':
+                    self.send(thetis_freq_event, int(data[4:15]))
+                case 'ZZAC':
+                    self.send(thetis_step_event, step_value[int(data[4:6])])

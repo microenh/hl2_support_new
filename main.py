@@ -9,17 +9,16 @@ BG_COLOR = "#3d6466"
 def run():
 
     leds = [False] * 3
-    run.frequency = 0
-    run.step = 0
+    run.frequency = 100
+    run.step = 1
 
     def update():
+        thetis.check_alive(1)
         thetis.query()
         window.after(100, update)
 
     def updateLEDs():
         flexControl.update_leds(*leds)
-
-
 
     def on_thetis_freq(e):
         run.frequency = e.VirtualEventData
