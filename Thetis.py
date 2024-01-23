@@ -63,23 +63,19 @@ STEP = (1,2,10,25,50,100,250,500,1_000,2_000,2_500,5_000,6_250,9_000,10_000,12_5
     15_000,20_000,25_000,30_000,50_000,100_000,250_000,500_000,1_000_000,10_000_000)
 
 class Thetis(Semicolon):
-    # def __init__(self, root, port, baud):
-    #     self.timestamp = datetime.now().timestamp()
-    #     super().__init__(root, port, baud)
+    def __init__(self, root, port, baud):
+        self.timestamp = datetime.now().timestamp()
+        super().__init__(root, port, baud)
         
-    # def heartbeat(self):
-    #     if (new_timestamp := datetime.now().timestamp()) - self.timestamp > 1:
-    #         self.root.queue_quit()
-    #     self.timestamp = new_timestamp
-    #     self.write(queryStr)
+    def heartbeat(self):
+        if (new_timestamp := datetime.now().timestamp()) - self.timestamp > 1:
+            self.root.queue_quit()
+        self.timestamp = new_timestamp
+        self.write(QUERY_STR)
  
     def turn(self, mult):
-        self.mult = mult
-        self.write(QUERY_STR)
-    
-    def turn2(self):
-        self.freq = (self.freq // self.step) * self.step
-        freq = self.freq + self.mult * self.step
+        self.freqa = (self.freqa // self.step) * self.step
+        freq = self.freqa + mult * self.step
         freq = min(max(freq, 100), 30_000_000)
         self.write(f'ZZFA{freq:011};'.encode())
 
@@ -92,7 +88,6 @@ class Thetis(Semicolon):
         if len(data) > 5:
             match (data[:4]):
                 case 'ZZFA':
-                    self.update('freq', int(data[4:15]))
+                    self.update('freqa', int(data[4:15]))
                 case 'ZZAC':
                     self.update('step', STEP[int(data[4:6])])
-                    self.turn2()

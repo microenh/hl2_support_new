@@ -3,6 +3,7 @@ import threading
 from tkinter import Event
 
 class Semicolon:
+    lock = threading.Lock()
     def __init__(self, root, port, baud):
         self.root = root
         try:
@@ -30,8 +31,9 @@ class Semicolon:
             self.root.quit()
 
     def send(self, event, data):
-        Event.VirtualEventData = data
-        self.root.event_generate(event, when='tail')
+        with Semicolon.lock:
+            Event.VirtualEventData = data
+            self.root.event_generate(event, when='tail')
 
     def run(self):
         while True:
