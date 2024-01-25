@@ -1,3 +1,4 @@
+#! c:/Users/mark/Developer/Python/hl2_support_new/.venv/Scripts/pythonw.exe
 import tkinter as tk
 import os
 from PIL import Image, ImageTk
