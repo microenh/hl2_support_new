@@ -1,4 +1,5 @@
 from Semicolon import Semicolon
+import eventID
 
 # Sending from FlexControl to host:
 # All commands terminate with ';' (no returns or line feeds)
@@ -25,8 +26,6 @@ from Semicolon import Semicolon
 #    I000; set all LEDs off
 #    I111; set all LEDs on
 
-FC_TURN = '<<FC_TURN>>'
-# fc_button = '<<FC_BUTTON>>'
 
 class FlexControl(Semicolon):
 
@@ -42,6 +41,10 @@ class FlexControl(Semicolon):
         self.clearLEDs()
         super().stop()
 
+    def updateButton(self, i):
+        self.leds[i] = not self.leds[i]
+        self.update_leds()
+
     def update_leds(self):
         self.write(f'I{self.leds[0]:d}{self.leds[1]:d}{self.leds[2]:d};'.encode())
 
@@ -54,15 +57,14 @@ class FlexControl(Semicolon):
                     mult = 1
                 if data[0] == 'D':
                     mult = -mult
-                self.send(FC_TURN, mult)
+                self.send((eventID.TURN, mult))
 
-            case 'S':
-                self.root.queue_quit()
-
-            # case 'C'|'L'|'S':
-            #     self.send(fc_button, ('0', data[0]))
+            case 'C'|'L'|'S':
+                self.send((eventID.BUTTON,('0', data[0])))
 
             case 'X':
-                if data[2] == 'S':
-                    self.leds[i] = not self.leds[(i := int(data[1]) - 1)]
-                    self.update_leds()
+                self.send((eventID.BUTTON, (data[1], data[2])))
+
+if __name__ == '__main__':
+    from main import main
+    main()

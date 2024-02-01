@@ -1,0 +1,7 @@
+EVENT = '<<EVENT>>'
+
+FREQA = 1
+STEP = 2
+TURN = 3
+QUIT = 4
+BUTTON = 5

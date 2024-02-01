@@ -1,13 +1,19 @@
 from serial import Serial
 import threading
 from tkinter import Event
+from telnetlib import Telnet
+
+EVENT = '<<EVENT>>'
 
 class Semicolon:
     lock = threading.Lock()
     def __init__(self, root, port, baud):
         self.root = root
         try:
-            self.ser = Serial(port, baud, timeout=None, write_timeout=1)
+            if port[:3] == 'COM':
+                self.ser = Serial(port, baud, timeout=None, write_timeout=1)
+            else:
+                self.ser = Telnet(port, baud)
         except Exception as e:
             # print(e)
             self.root.quit()
@@ -30,10 +36,10 @@ class Semicolon:
         except:
             self.root.quit()
 
-    def send(self, event, data):
-        with Semicolon.lock:
+    def send(self, data):
+        with self.lock:
             Event.VirtualEventData = data
-            self.root.event_generate(event, when='tail')
+            self.root.event_generate(EVENT, when='tail')
 
     def run(self):
         while True:
@@ -45,3 +51,7 @@ class Semicolon:
                     pass
             except:
                 break
+
+if __name__ == '__main__':
+    from main import main
+    main()

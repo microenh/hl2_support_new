@@ -2,32 +2,35 @@
 import tkinter as tk
 import os
 from PIL import Image, ImageTk
-
-from FlexControl import FlexControl, FC_TURN
-from Thetis import Thetis, THETIS_DATA
+import eventID
+from FlexControl import FlexControl
+from Thetis import Thetis
 
 BG_COLOR = "#3d6466"
-QUIT_EVENT = '<<QUIT>>'
 
 class MainWindow(tk.Tk):
 
     def __init__(self):
         super().__init__()
         self.protocol('WM_DELETE_WINDOW', self.quit)
-        self.bind(FC_TURN, self.fc_turn)
-        self.bind(QUIT_EVENT, lambda a: self.quit())
-        self.bind(THETIS_DATA, self.thetis_data)
-        self.thetis = Thetis(self, 'COM6', 115200)
-        self.flexControl = FlexControl(self, 'COM7', 9600)
+        self.bind(eventID.EVENT, self.do_event)
+        self.thetis = Thetis(self, 'localhost', 13013)
+        self.flexControl = FlexControl(self, 'COM12', 9600)
         self.layout()
+        self.iconphoto(False, self.image)
 
     def  layout(self):
-        # self.title("FC")
-        # self.geometry('150x112')
+        self.title("FlexControl")
+        # self.geometry('250x112')
+        logo = os.path.join(os.path.dirname(__file__), "flex_control.png")
+        i = Image.open(logo)
+        w,h = i.size
+        w //= 4
+        h //= 4
+        self.image = ImageTk.PhotoImage(i.resize((w,h)))
+        
         frame = tk.Frame(self, bg=BG_COLOR)
         frame.grid()
-        logo = os.path.join(os.path.dirname(__file__), "flex_control.png")
-        self.image=ImageTk.PhotoImage(Image.open(logo))        
         tk.Label(frame, image=self.image, bg=BG_COLOR).grid(row=0, column=0, columnspan=2)
         tk.Label(frame, text='VFO A:', bg=BG_COLOR).grid(row=1, column=0, sticky='W')
         tk.Label(frame, text='Step:', bg=BG_COLOR).grid(row=2, column=0, sticky='W')
@@ -36,23 +39,30 @@ class MainWindow(tk.Tk):
         self.step = tk.StringVar()
         tk.Label(frame, textvariable=self.step, bg=BG_COLOR).grid(row=2, column=1, sticky='E')
 
-
-
-    def queue_quit(self):
-        self.event_generate(QUIT_EVENT, when='tail')
-
-    def fc_turn(self, e):
-        self.thetis.turn(e.VirtualEventData)
-
-    def thetis_data(self, e):
-        name, value = e.VirtualEventData
-        self.__dict__[name].set(f'{value:,}')
-        # match name:
-        #     case 'freq':
-        #         self.freq.set(f'{value:,}')
-        #     case 'step':
-        #         self.step.set(f'{value:,}')
-        # print(f'{name} = {value}')
+    def do_event(self, e):
+        try:
+            name, value = e.VirtualEventData
+            match name:
+                case eventID.FREQA:
+                    self.freqa.set(f'{value:,}')
+                case eventID.STEP:
+                    self.step.set(f'{value:,}')
+                case eventID.TURN:
+                    self.thetis.turn(value)
+                case eventID.BUTTON:
+                    if value[1] == 'S':
+                        match m := int(value[0]):
+                            case 0:
+                                self.quit()
+                            case 1|2|3:
+                                self.flexControl.updateButton(m-1)
+                case eventID.QUIT:
+                    self.quit()
+            # print(f'{name} = {value}')
+        except Exception as e:
+            pass
+##            print (e)
+##            print (f'exc e.VirtualEventData: {e.VirtualEventData}')
  
     def heartbeat(self):
         self.thetis.heartbeat()
@@ -62,11 +72,16 @@ class MainWindow(tk.Tk):
         self.thetis.start()
         self.flexControl.start()
         self.after_idle(self.heartbeat)
+        self.after_idle(lambda: self.eval("tk::PlaceWindow . center"))
+        # self.after_idle(lambda: self.iconphoto(False, self.image))
         self.mainloop()
         self.thetis.stop()
         self.flexControl.stop()
         self.destroy()
 
 
-if __name__ == '__main__':
+def main():
     MainWindow().run()
+
+if __name__ == '__main__':
+    main()
