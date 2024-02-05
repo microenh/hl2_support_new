@@ -1,7 +1,14 @@
+from enum import Enum, auto
+
 EVENT = '<<EVENT>>'
 
-FREQA = 1
-STEP = 2
-TURN = 3
-QUIT = 4
-BUTTON = 5
+class ThetisEvent(Enum):
+
+    QUIT = auto()
+    TURN = auto()
+    BUTTON = auto()
+    FREQA = auto()
+    STEP = auto()
+
+if __name__ == '__main__':
+    t = ThetisEvent

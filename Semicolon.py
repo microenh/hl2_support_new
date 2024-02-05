@@ -2,13 +2,14 @@ from serial import Serial
 import threading
 from tkinter import Event
 from telnetlib import Telnet
+from eventID import EVENT
 
-EVENT = '<<EVENT>>'
 
 class Semicolon:
     lock = threading.Lock()
     def __init__(self, root, port, baud):
         self.root = root
+        self.port = port
         try:
             if port[:3] == 'COM':
                 self.ser = Serial(port, baud, timeout=None, write_timeout=1)

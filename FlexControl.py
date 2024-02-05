@@ -1,5 +1,5 @@
 from Semicolon import Semicolon
-import eventID
+from eventID import ThetisEvent
 
 # Sending from FlexControl to host:
 # All commands terminate with ';' (no returns or line feeds)
@@ -57,13 +57,13 @@ class FlexControl(Semicolon):
                     mult = 1
                 if data[0] == 'D':
                     mult = -mult
-                self.send((eventID.TURN, mult))
+                self.send((ThetisEvent.TURN.value, mult))
 
             case 'C'|'L'|'S':
-                self.send((eventID.BUTTON,('0', data[0])))
+                self.send((ThetisEvent.BUTTON.value,('0', data[0])))
 
             case 'X':
-                self.send((eventID.BUTTON, (data[1], data[2])))
+                self.send((ThetisEvent.BUTTON.value, (data[1], data[2])))
 
 if __name__ == '__main__':
     from main import main

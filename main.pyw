@@ -2,7 +2,7 @@
 import tkinter as tk
 import os
 from PIL import Image, ImageTk
-import eventID
+from eventID import ThetisEvent, EVENT
 from FlexControl import FlexControl
 from Thetis import Thetis
 
@@ -12,9 +12,11 @@ class MainWindow(tk.Tk):
 
     def __init__(self):
         super().__init__()
+        self.data = [None] * (len(ThetisEvent) + 1)
         self.protocol('WM_DELETE_WINDOW', self.quit)
-        self.bind(eventID.EVENT, self.do_event)
+        self.bind(EVENT, self.do_event)
         self.thetis = Thetis(self, 'localhost', 13013)
+        # self.thetis = Thetis(self, 'COM6', 115_200)
         self.flexControl = FlexControl(self, 'COM12', 9600)
         self.layout()
         self.iconphoto(False, self.image)
@@ -39,24 +41,32 @@ class MainWindow(tk.Tk):
         self.step = tk.StringVar()
         tk.Label(frame, textvariable=self.step, bg=BG_COLOR).grid(row=2, column=1, sticky='E')
 
+
+    def data_changed(self, key, value):
+        if result := self.data[key] != value:
+            self.data[key] = value
+        return result
+
     def do_event(self, e):
         try:
             name, value = e.VirtualEventData
             match name:
-                case eventID.FREQA:
-                    self.freqa.set(f'{value:,}')
-                case eventID.STEP:
-                    self.step.set(f'{value:,}')
-                case eventID.TURN:
+                case ThetisEvent.FREQA.value:
+                    if self.data_changed(name, value):
+                        self.freqa.set(f'{value:,}')
+                case ThetisEvent.STEP.value:
+                    if self.data_changed(name, value):
+                        self.step.set(f'{value:,}')
+                case ThetisEvent.TURN.value:
                     self.thetis.turn(value)
-                case eventID.BUTTON:
+                case ThetisEvent.BUTTON.value:
                     if value[1] == 'S':
                         match m := int(value[0]):
                             case 0:
                                 self.quit()
                             case 1|2|3:
                                 self.flexControl.updateButton(m-1)
-                case eventID.QUIT:
+                case ThetisEvent.QUIT.value:
                     self.quit()
             # print(f'{name} = {value}')
         except Exception as e:
@@ -66,14 +76,13 @@ class MainWindow(tk.Tk):
  
     def heartbeat(self):
         self.thetis.heartbeat()
-        self.after(100, self.heartbeat)
+        self.after(1000, self.heartbeat)
 
     def run(self):
         self.thetis.start()
         self.flexControl.start()
         self.after_idle(self.heartbeat)
         self.after_idle(lambda: self.eval("tk::PlaceWindow . center"))
-        # self.after_idle(lambda: self.iconphoto(False, self.image))
         self.mainloop()
         self.thetis.stop()
         self.flexControl.stop()
